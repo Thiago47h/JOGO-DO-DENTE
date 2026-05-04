@@ -555,9 +555,17 @@ async function createProfile(uid, username, isAnon=false){
 }
 
 async function logout(){
+  if(cooldownInterval)clearInterval(cooldownInterval);
+  if(bonusInterval)clearInterval(bonusInterval);
   await sb.auth.signOut();
   currentUser=null; profile=null;
+  // esconde app, mostra auth
   document.getElementById('auth-screen').classList.remove('hidden');
+  // reseta campos
+  document.getElementById('auth-username').value='';
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-password').value='';
+  document.getElementById('auth-error').textContent='';
 }
 
 // ── SESSION ───────────────────────────────
