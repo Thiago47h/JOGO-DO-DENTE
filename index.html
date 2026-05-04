@@ -3,71 +3,59 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Brushy - Jogo do Dente</title>
+<title>Brushy</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet"/>
 <style>
-:root{--bg:#050d1a;--card:#0a1628;--cyan:#00e5ff;--gold:#ffd700;}
-* { box-sizing:border-box; margin:0; padding:0; }
-body { background:var(--bg); color:white; font-family:'Rajdhani',sans-serif; height:100vh; overflow:hidden; }
+/* === CSS DO LOGIN === */
+#login-screen{position:fixed;inset:0;background:#050d1a;z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+#login-box{background:#0a1628;border:2px solid #00e5ff;border-radius:20px;padding:40px 30px;width:90%;max-width:360px;text-align:center;}
+#login-box h1{font-family:'Orbitron',monospace;color:#00e5ff;margin-bottom:10px;}
+.input-field{width:100%;padding:16px;margin:12px 0;background:#050d1a;border:1px solid #00e5ff44;border-radius:12px;color:white;font-size:17px;text-align:center;}
+.btn{width:100%;padding:16px;margin:8px 0;border-radius:12px;font-family:'Orbitron',monospace;font-weight:700;cursor:pointer;}
+.btn-login{background:linear-gradient(135deg,#6a00b8,#9c27b0);color:white;border:1px solid #ce93d8;}
+.btn-create{background:transparent;border:2px solid #00e5ff;color:#00e5ff;}
 
-#login-screen {
-  position:fixed; inset:0; background:var(--bg); z-index:1000;
-  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px;
-}
-#login-box {
-  background:var(--card); border:2px solid var(--cyan); border-radius:20px;
-  padding:40px 30px; width:90%; max-width:360px; text-align:center;
-}
-#login-box h1 { font-family:'Orbitron',monospace; color:var(--cyan); margin-bottom:10px; }
-.input-field {
-  width:100%; padding:16px; margin:12px 0; background:#050d1a; border:1px solid #00e5ff44;
-  border-radius:12px; color:white; font-size:17px; text-align:center;
-}
-.btn { width:100%; padding:16px; margin:8px 0; border-radius:12px; font-weight:700; cursor:pointer; font-family:'Orbitron',monospace; }
-.btn-login { background:linear-gradient(135deg,#6a00b8,#9c27b0); border:1px solid #ce93d8; color:white; }
-.btn-create { background:transparent; border:2px solid var(--cyan); color:var(--cyan); }
+/* === SEU CSS ORIGINAL (mantido) === */
+:root{--bg:#050d1a;--card:#0a1628;--cyan:#00e5ff;--gold:#ffd700;}
+*{box-sizing:border-box;margin:0;padding:0;}
+#app{display:none;flex-direction:column;height:100vh;background:var(--bg);overflow:hidden;}
+/* ... (o resto do seu CSS original vai aqui) ... */
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
   <div id="login-box">
-    <h1>BRUSHY</h1>
+    <h1>BRUSHY.EXE</h1>
     <p style="color:#4a7aaa;">Escolha ou crie seu escovador</p>
-    
     <input id="username-input" class="input-field" type="text" maxlength="12" placeholder="SEU NOME" autocomplete="off"/>
-    
     <button class="btn btn-login" onclick="login()">ENTRAR</button>
     <button class="btn btn-create" onclick="createNewAccount()">CRIAR NOVA CONTA</button>
-    
-    <div id="accounts-list" style="margin-top:25px; font-size:14px;"></div>
+    <div id="accounts-list" style="margin-top:20px;"></div>
   </div>
 </div>
 
+<!-- APP ORIGINAL -->
+<div id="app">
+  <!-- Cole aqui TODO o conteúdo do <div id="app"> do seu arquivo original -->
+  <!-- Incluindo header, xp-bar, scene, tabs, etc -->
+</div>
+
 <script>
-// Sistema de Login
+// ==================== LOGIN SYSTEM ====================
 let currentUser = null;
 let allUsers = {};
 
-function loadAllUsers() {
-  allUsers = JSON.parse(localStorage.getItem('brushy_users') || '{}');
-}
-
-function saveAllUsers() {
-  localStorage.setItem('brushy_users', JSON.stringify(allUsers));
-}
+function loadAllUsers() { allUsers = JSON.parse(localStorage.getItem('brushy_users') || '{}'); }
+function saveAllUsers() { localStorage.setItem('brushy_users', JSON.stringify(allUsers)); }
 
 function createNewAccount() {
   let username = document.getElementById('username-input').value.trim().toUpperCase();
-  if (username.length < 3) return alert("Nome deve ter no mínimo 3 letras!");
-  if (allUsers[username]) return alert("Esse nome já existe!");
+  if (username.length < 3) return alert("Nome muito curto!");
+  if (allUsers[username]) return alert("Esse usuário já existe!");
 
-  allUsers[username] = {
-    coins: 100,
-    level: 1,
-    streak: 0,
-    brushName: username
-  };
+  allUsers[username] = {coins:100, xp:0, level:1, total:0, streak:0, bestStreak:0, lastDay:'', todayBrushes:[], ownedColors:['white'], equippedColor:'white', brushName:username};
   saveAllUsers();
   loginWithUsername(username);
 }
@@ -75,31 +63,38 @@ function createNewAccount() {
 function login() {
   let username = document.getElementById('username-input').value.trim().toUpperCase();
   if (!username) return alert("Digite um nome!");
-
-  if (allUsers[username]) {
-    loginWithUsername(username);
-  } else {
-    if (confirm(`Criar nova conta com o nome "${username}"?`)) {
-      createNewAccount();
-    }
-  }
+  if (allUsers[username]) loginWithUsername(username);
+  else if (confirm(`Criar conta "${username}"?`)) createNewAccount();
 }
 
 function loginWithUsername(username) {
   currentUser = username;
   localStorage.setItem('brushy_current_user', username);
-  alert(`✅ Bem-vindo de volta, ${username}!`);
-  // Aqui vamos colocar o jogo completo depois
-  document.body.innerHTML = `<h2 style="color:#00e5ff; text-align:center; margin-top:100px;">🎮 Jogo carregando...<br><small>${username}</small></h2>`;
+  
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  
+  loadUserData();
+  initApp(); // sua função original
 }
+
+function loadUserData() {
+  if (allUsers[currentUser]) state = {...allUsers[currentUser]};
+}
+
+function saveState() {
+  if (currentUser) {
+    allUsers[currentUser] = {...state};
+    saveAllUsers();
+  }
+}
+
+// ==================== SEU CÓDIGO ORIGINAL ====================
+// Cole aqui todo o seu <script> original (as funções finishBrush, state, etc)
 
 loadAllUsers();
-
-// Login automático se já tiver usuário anterior
 const lastUser = localStorage.getItem('brushy_current_user');
-if (lastUser && allUsers[lastUser]) {
-  loginWithUsername(lastUser);
-}
+if (lastUser && allUsers[lastUser]) loginWithUsername(lastUser);
 </script>
 </body>
 </html>
