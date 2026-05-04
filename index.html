@@ -520,11 +520,29 @@ async function authMain(){
 }
 
 async function authAnon(){
+  document.querySelector('.btn-anon').textContent='...';
   const {data,error} = await sb.auth.signInAnonymously();
-  if(error){toast('Erro ao entrar anonimamente');return;}
+  if(error){toast('Erro: '+error.message);document.querySelector('.btn-anon').textContent='🎮 ENTRAR SEM CONTA (ANÔNIMO)';return;}
   const u = data.user;
+  currentUser = u;
   const username = 'brush_'+Math.random().toString(36).slice(2,7);
   await createProfile(u.id, username, true);
+  await new Promise(r=>setTimeout(r,500)); // garante que DB gravou
+  await loadProfile();
+  if(!profile){
+    // fallback: cria perfil local mínimo
+    profile = {
+      id:u.id, username, friend_code:Math.random().toString(36).slice(2,10).toUpperCase(),
+      brush_name:'BRUSHY_V1', level:1, xp:0, coins:0, total_coins:0,
+      total_brushes:0, streak:0, best_streak:0, total_days:0, earned:0,
+      equipped_color:'white', equipped_acc:null,
+      owned_colors:['white'], owned_acc:[], badges:[],
+      last_brush_day:'', today_brushes:[], week_brushes:0, week_start:'',
+      bonus_expiry:0, missions_claimed:{}, active_days:[], is_anonymous:true
+    };
+  }
+  document.getElementById('auth-screen').classList.add('hidden');
+  initApp();
 }
 
 async function createProfile(uid, username, isAnon=false){
@@ -544,20 +562,29 @@ async function logout(){
 
 // ── SESSION ───────────────────────────────
 sb.auth.onAuthStateChange(async (event, session) => {
-  if(session?.user){
+  if(event === 'SIGNED_OUT'){
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+  // login com email/senha — anon já tratado direto em authAnon()
+  if(event === 'SIGNED_IN' && session?.user && !session.user.is_anonymous){
     currentUser = session.user;
     await loadProfile();
+    if(!profile){
+      // novo cadastro email — cria perfil
+      const username = document.getElementById('auth-username')?.value?.trim()?.toLowerCase() || 'user_'+Math.random().toString(36).slice(2,6);
+      await createProfile(currentUser.id, username, false);
+      await loadProfile();
+    }
     document.getElementById('auth-screen').classList.add('hidden');
     initApp();
-  } else {
-    document.getElementById('auth-screen').classList.remove('hidden');
   }
 });
 
 async function loadProfile(){
+  if(!currentUser)return;
   setSyncState('syncing');
   const {data,error} = await sb.from('brushy_profiles').select('*').eq('id',currentUser.id).single();
-  if(error||!data){setSyncState('error');return;}
+  if(error||!data){setSyncState('error');console.warn('loadProfile falhou:',error);return;}
   profile = data;
   // fix arrays
   if(!profile.owned_colors||!profile.owned_colors.length)profile.owned_colors=['white'];
@@ -656,7 +683,8 @@ let cooldownInterval=null,bonusInterval=null;
 
 // ── INIT APP ──────────────────────────────
 function initApp(){
-  if(!profile)return;
+  if(!profile){console.error('initApp: profile nulo!');return;}
+  console.log('initApp OK, user:', currentUser?.id, 'profile:', profile?.username);
   applyColor((COLORS.find(c=>c.id===profile.equipped_color)||COLORS[0]).hex);
   renderAcc();
   updateUI();
@@ -764,6 +792,7 @@ function getTodayBrushes(){
   return profile.today_brushes||[];
 }
 function canBrush(){
+  if(!profile)return{ok:false,reason:'MAX'};
   const b=getTodayBrushes();
   if(b.length>=MAX_PER_DAY)return{ok:false,reason:'MAX'};
   if(b.length>0){const diff=Date.now()-b[b.length-1];if(diff<MIN_INTERVAL)return{ok:false,reason:'COOLDOWN',remaining:MIN_INTERVAL-diff};}
@@ -778,7 +807,7 @@ function updateBtnState(){
   else{btn.disabled=true;info.textContent='PRÓXIMA EM: '+fmtTime(check.remaining);info.style.color='#9c27b0';setSpeech('cooldown');}
 }
 function startTick(){if(cooldownInterval)clearInterval(cooldownInterval);cooldownInterval=setInterval(updateBtnState,1000);}
-function askConfirm(){if(!canBrush().ok)return;document.getElementById('brush-btn').style.display='none';document.getElementById('confirm-wrap').classList.add('visible');setSpeech('confirm');}
+function askConfirm(){if(!profile||!canBrush().ok)return;document.getElementById('brush-btn').style.display='none';document.getElementById('confirm-wrap').classList.add('visible');setSpeech('confirm');}
 function cancelConfirm(){document.getElementById('brush-btn').style.display='block';document.getElementById('confirm-wrap').classList.remove('visible');setSpeech('idle');updateBtnState();}
 
 async function finishBrush(){
