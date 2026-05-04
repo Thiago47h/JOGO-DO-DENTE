@@ -505,17 +505,42 @@ async function authMain(){
   const email    = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   const errEl    = document.getElementById('auth-error');
+  const btn      = document.getElementById('auth-main-btn');
   errEl.textContent = '';
   if(!email||!password){errEl.textContent='Preencha email e senha!';return;}
   if(authMode==='register'&&!username){errEl.textContent='Escolha um username!';return;}
-  document.getElementById('auth-main-btn').textContent='...';
+  btn.textContent='...';btn.disabled=true;
+
   if(authMode==='register'){
     const {data,error} = await sb.auth.signUp({email,password});
-    if(error){errEl.textContent=error.message;document.getElementById('auth-main-btn').textContent='CRIAR CONTA';return;}
-    await createProfile(data.user.id, username);
+    if(error){errEl.textContent=error.message;btn.textContent='CRIAR CONTA';btn.disabled=false;return;}
+    currentUser = data.user;
+    await createProfile(currentUser.id, username, false);
+    await new Promise(r=>setTimeout(r,500));
+    await loadProfile();
+    if(!profile){
+      profile = {
+        id:currentUser.id, username, friend_code:Math.random().toString(36).slice(2,10).toUpperCase(),
+        brush_name:'BRUSHY_V1', level:1, xp:0, coins:0, total_coins:0,
+        total_brushes:0, streak:0, best_streak:0, total_days:0, earned:0,
+        equipped_color:'white', equipped_acc:null,
+        owned_colors:['white'], owned_acc:[], badges:[],
+        last_brush_day:'', today_brushes:[], week_brushes:0, week_start:'',
+        bonus_expiry:0, missions_claimed:{}, active_days:[], is_anonymous:false
+      };
+    }
+    document.getElementById('auth-screen').classList.add('hidden');
+    btn.textContent='CRIAR CONTA';btn.disabled=false;
+    initApp();
   } else {
     const {data,error} = await sb.auth.signInWithPassword({email,password});
-    if(error){errEl.textContent='Email ou senha incorretos!';document.getElementById('auth-main-btn').textContent='ENTRAR';return;}
+    if(error){errEl.textContent='Email ou senha incorretos!';btn.textContent='ENTRAR';btn.disabled=false;return;}
+    currentUser = data.user;
+    await loadProfile();
+    if(!profile){errEl.textContent='Perfil não encontrado!';btn.textContent='ENTRAR';btn.disabled=false;return;}
+    document.getElementById('auth-screen').classList.add('hidden');
+    btn.textContent='ENTRAR';btn.disabled=false;
+    initApp();
   }
 }
 
