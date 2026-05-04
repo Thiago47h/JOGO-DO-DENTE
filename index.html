@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>Brushy</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet"/>
 <style>
-/* LOGIN */
+/* === LOGIN === */
 #login-screen{position:fixed;inset:0;background:#050d1a;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
 #login-box{background:#0a1628;border:2px solid #00e5ff;border-radius:20px;padding:40px 30px;width:90%;max-width:360px;text-align:center;}
 #login-box h1{font-family:'Orbitron',monospace;color:#00e5ff;letter-spacing:2px;}
@@ -16,7 +15,7 @@
 .btn-login{background:linear-gradient(135deg,#6a00b8,#9c27b0);color:white;border:1px solid #ce93d8;}
 .btn-create{background:transparent;border:2px solid #00e5ff;color:#00e5ff;}
 
-/* CSS ORIGINAL DO JOGO */
+/* === CSS ORIGINAL === */
 :root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--bg:#050d1a;--card:#0a1628;--card2:#0d1f3c;--border:#1a3a6a;--cyan:#00e5ff;--purple:#9c27b0;--gold:#ffd700;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;}
 html,body{width:100%;height:100%;background:var(--bg);font-family:'Rajdhani',sans-serif;overflow:hidden;position:fixed;}
@@ -43,32 +42,36 @@ html,body{width:100%;height:100%;background:var(--bg);font-family:'Rajdhani',san
 
 <!-- JOGO ORIGINAL -->
 <div id="app">
-  <!-- Todo o conteúdo original do jogo -->
   <div id="header">
     <div class="cyber-title">// BRUSHY.EXE //</div>
     <div id="coins-display"><div class="coin-icon"></div><span id="coin-count">0</span></div>
   </div>
-  <div id="xp-bar-wrap">... (o resto do seu HTML original) ...</div>
-  <!-- Cole o resto do HTML aqui se necessário -->
+  <div id="xp-bar-wrap">
+    <div id="xp-row">
+      <div id="level-badge">LVL <span id="lvl-num">1</span> — <span id="lvl-title-sm">INICIANTE</span></div>
+      <div id="xp-label"><span id="xp-cur">0</span>/<span id="xp-max">100</span> XP</div>
+    </div>
+    <div id="xp-track"><div id="xp-fill" style="width:0%"></div></div>
+  </div>
+  <div id="scroll">
+    <!-- Todo o conteúdo original do jogo vai aqui -->
+    <div id="scene">... (o SVG e tudo mais) ...</div>
+    <!-- Tabs, panels, etc -->
+  </div>
 </div>
 
 <script>
-// ==================== SISTEMA DE LOGIN ====================
+// ==================== LOGIN SYSTEM ====================
 let currentUser = null;
 let allUsers = {};
 
-function loadAllUsers() {
-  allUsers = JSON.parse(localStorage.getItem('brushy_users') || '{}');
-}
-
-function saveAllUsers() {
-  localStorage.setItem('brushy_users', JSON.stringify(allUsers));
-}
+function loadAllUsers() { allUsers = JSON.parse(localStorage.getItem('brushy_users') || '{}'); }
+function saveAllUsers() { localStorage.setItem('brushy_users', JSON.stringify(allUsers)); }
 
 function createNewAccount() {
   let username = document.getElementById('username-input').value.trim().toUpperCase();
-  if (username.length < 3) return alert("Nome deve ter no mínimo 3 caracteres!");
-  if (allUsers[username]) return alert("Esse usuário já existe!");
+  if (username.length < 3) return alert("Nome deve ter pelo menos 3 caracteres!");
+  if (allUsers[username]) return alert("Esse nome já existe!");
 
   allUsers[username] = {coins:100,xp:0,level:1,total:0,streak:0,bestStreak:0,lastDay:'',todayBrushes:[],ownedColors:['white'],equippedColor:'white',brushName:username};
   saveAllUsers();
@@ -78,11 +81,8 @@ function createNewAccount() {
 function login() {
   let username = document.getElementById('username-input').value.trim().toUpperCase();
   if (!username) return alert("Digite um nome!");
-  if (allUsers[username]) {
-    loginWithUsername(username);
-  } else if (confirm(`Criar nova conta com "${username}"?`)) {
-    createNewAccount();
-  }
+  if (allUsers[username]) loginWithUsername(username);
+  else if (confirm(`Criar nova conta "${username}"?`)) createNewAccount();
 }
 
 function loginWithUsername(username) {
@@ -94,42 +94,30 @@ function loginWithUsername(username) {
   initApp();
 }
 
-// ==================== CÓDIGO ORIGINAL DO JOGO ====================
-let state = {coins:0,totalCoins:0,xp:0,level:1,total:0,streak:0,bestStreak:0,lastDay:'',todayBrushes:[],ownedColors:['white'],equippedColor:'white',brushName:'BRUSHY_V1'};
+// ==================== JOGO ORIGINAL (seu código) ====================
+let state = {};
 
 function loadUserData() {
-  if (allUsers[currentUser]) {
-    state = {...allUsers[currentUser]};
-  }
+  if (allUsers[currentUser]) state = JSON.parse(JSON.stringify(allUsers[currentUser]));
 }
 
 function saveState() {
   if (currentUser) {
-    allUsers[currentUser] = {...state};
+    allUsers[currentUser] = JSON.parse(JSON.stringify(state));
     saveAllUsers();
   }
 }
 
-// Inicialização
+function initApp() {
+  console.log("Jogo iniciado para:", currentUser);
+  // Aqui você pode adicionar updateUI(), updateSlots(), etc do seu código original
+}
+
+// Carrega último usuário
 loadAllUsers();
 const lastUser = localStorage.getItem('brushy_current_user');
 if (lastUser && allUsers[lastUser]) {
   loginWithUsername(lastUser);
-} else {
-  const container = document.getElementById('accounts-list');
-  container.innerHTML = '<p style="color:#4a7aaa">Contas salvas:</p>';
-  Object.keys(allUsers).forEach(u => {
-    const d = document.createElement('div');
-    d.style = 'padding:10px;background:#1a3a6a;margin:5px 0;border-radius:8px;cursor:pointer;';
-    d.textContent = u;
-    d.onclick = () => loginWithUsername(u);
-    container.appendChild(d);
-  });
-}
-
-function initApp() {
-  console.log("Brushy carregado para:", currentUser);
-  // Aqui você pode chamar as funções de inicialização do jogo
 }
 </script>
 </body>
