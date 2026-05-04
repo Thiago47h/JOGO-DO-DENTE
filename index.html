@@ -6,20 +6,20 @@
 <title>Brushy</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet"/>
 <style>
-/* === CSS DO LOGIN === */
-#login-screen{position:fixed;inset:0;background:#050d1a;z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
-#login-box{background:#0a1628;border:2px solid #00e5ff;border-radius:20px;padding:40px 30px;width:90%;max-width:360px;text-align:center;}
-#login-box h1{font-family:'Orbitron',monospace;color:#00e5ff;margin-bottom:10px;}
-.input-field{width:100%;padding:16px;margin:12px 0;background:#050d1a;border:1px solid #00e5ff44;border-radius:12px;color:white;font-size:17px;text-align:center;}
-.btn{width:100%;padding:16px;margin:8px 0;border-radius:12px;font-family:'Orbitron',monospace;font-weight:700;cursor:pointer;}
-.btn-login{background:linear-gradient(135deg,#6a00b8,#9c27b0);color:white;border:1px solid #ce93d8;}
-.btn-create{background:transparent;border:2px solid #00e5ff;color:#00e5ff;}
+/* LOGIN */
+#login-screen { position:fixed; inset:0; background:#050d1a; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:20px; }
+#login-box { background:#0a1628; border:2px solid #00e5ff; border-radius:20px; padding:40px 30px; width:90%; max-width:360px; text-align:center; }
+#login-box h1 { font-family:'Orbitron',monospace; color:#00e5ff; }
+.input-field { width:100%; padding:16px; margin:12px 0; background:#050d1a; border:1px solid #00e5ff44; border-radius:12px; color:white; text-align:center; font-size:17px; }
+.btn { width:100%; padding:16px; margin:8px 0; border-radius:12px; font-family:'Orbitron',monospace; font-weight:700; cursor:pointer; }
+.btn-login { background:linear-gradient(135deg,#6a00b8,#9c27b0); color:white; border:1px solid #ce93d8; }
+.btn-create { background:transparent; border:2px solid #00e5ff; color:#00e5ff; }
 
-/* === SEU CSS ORIGINAL (mantido) === */
+/* Seu CSS original */
 :root{--bg:#050d1a;--card:#0a1628;--cyan:#00e5ff;--gold:#ffd700;}
-*{box-sizing:border-box;margin:0;padding:0;}
-#app{display:none;flex-direction:column;height:100vh;background:var(--bg);overflow:hidden;}
-/* ... (o resto do seu CSS original vai aqui) ... */
+* {box-sizing:border-box; margin:0; padding:0;}
+html,body {width:100%; height:100%; background:var(--bg); overflow:hidden; position:fixed;}
+#app {width:100%; height:100%; display:none; flex-direction:column; background:var(--bg);}
 </style>
 </head>
 <body>
@@ -28,43 +28,48 @@
 <div id="login-screen">
   <div id="login-box">
     <h1>BRUSHY.EXE</h1>
-    <p style="color:#4a7aaa;">Escolha ou crie seu escovador</p>
-    <input id="username-input" class="input-field" type="text" maxlength="12" placeholder="SEU NOME" autocomplete="off"/>
+    <p style="color:#4a7aaa; margin:15px 0;">Escolha ou crie seu escovador</p>
+    <input id="username-input" class="input-field" type="text" maxlength="12" placeholder="EX: THIAGO47"/>
     <button class="btn btn-login" onclick="login()">ENTRAR</button>
-    <button class="btn btn-create" onclick="createNewAccount()">CRIAR NOVA CONTA</button>
-    <div id="accounts-list" style="margin-top:20px;"></div>
+    <button class="btn btn-create" onclick="createNewAccount()">+ CRIAR NOVA CONTA</button>
+    <div id="accounts-list" style="margin-top:25px; font-size:14px; color:#aaa;"></div>
   </div>
 </div>
 
-<!-- APP ORIGINAL -->
+<!-- JOGO -->
 <div id="app">
-  <!-- Cole aqui TODO o conteúdo do <div id="app"> do seu arquivo original -->
-  <!-- Incluindo header, xp-bar, scene, tabs, etc -->
+  <!-- AQUI VAI TODO SEU HTML ORIGINAL DO JOGO -->
+  <div id="header">... (cole aqui todo o conteúdo antigo dentro do #app)</div>
 </div>
 
 <script>
-// ==================== LOGIN SYSTEM ====================
+// === SISTEMA DE LOGIN ===
 let currentUser = null;
 let allUsers = {};
 
-function loadAllUsers() { allUsers = JSON.parse(localStorage.getItem('brushy_users') || '{}'); }
-function saveAllUsers() { localStorage.setItem('brushy_users', JSON.stringify(allUsers)); }
+function loadAllUsers() {
+  allUsers = JSON.parse(localStorage.getItem('brushy_users') || '{}');
+}
 
 function createNewAccount() {
   let username = document.getElementById('username-input').value.trim().toUpperCase();
-  if (username.length < 3) return alert("Nome muito curto!");
-  if (allUsers[username]) return alert("Esse usuário já existe!");
+  if (username.length < 3) return alert("Nome deve ter pelo menos 3 caracteres!");
+  if (allUsers[username]) return alert("Esse nome já existe!");
 
-  allUsers[username] = {coins:100, xp:0, level:1, total:0, streak:0, bestStreak:0, lastDay:'', todayBrushes:[], ownedColors:['white'], equippedColor:'white', brushName:username};
-  saveAllUsers();
+  allUsers[username] = {coins:100, xp:0, level:1, streak:0, brushName: username};
+  localStorage.setItem('brushy_users', JSON.stringify(allUsers));
   loginWithUsername(username);
 }
 
 function login() {
   let username = document.getElementById('username-input').value.trim().toUpperCase();
   if (!username) return alert("Digite um nome!");
-  if (allUsers[username]) loginWithUsername(username);
-  else if (confirm(`Criar conta "${username}"?`)) createNewAccount();
+  
+  if (allUsers[username]) {
+    loginWithUsername(username);
+  } else if (confirm(`Criar nova conta com "${username}"?`)) {
+    createNewAccount();
+  }
 }
 
 function loginWithUsername(username) {
@@ -74,24 +79,11 @@ function loginWithUsername(username) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   
-  loadUserData();
-  initApp(); // sua função original
+  alert(`Bem-vindo, ${username}! 🎮`);
+  // Aqui o jogo deve aparecer
 }
 
-function loadUserData() {
-  if (allUsers[currentUser]) state = {...allUsers[currentUser]};
-}
-
-function saveState() {
-  if (currentUser) {
-    allUsers[currentUser] = {...state};
-    saveAllUsers();
-  }
-}
-
-// ==================== SEU CÓDIGO ORIGINAL ====================
-// Cole aqui todo o seu <script> original (as funções finishBrush, state, etc)
-
+// Carrega usuário anterior
 loadAllUsers();
 const lastUser = localStorage.getItem('brushy_current_user');
 if (lastUser && allUsers[lastUser]) loginWithUsername(lastUser);
