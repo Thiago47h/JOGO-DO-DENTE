@@ -1048,8 +1048,9 @@ async function loadFriendsAndRanking(){
   // busca pendentes (recebidas)
   const {data:pendRows}=await sb.from('brushy_friends').select('*').eq('friend_id',currentUser.id).eq('status','pending');
   console.log('pendentes recebidas:', pendRows, 'meu id:', currentUser.id);
-  // busca perfis de todos (eu + amigos)
-  const allIds=[currentUser.id,...friendIds];
+  // busca perfis de todos (eu + amigos + quem enviou pendentes)
+  const pendSenderIds=(pendRows||[]).map(r=>r.user_id);
+  const allIds=[...new Set([currentUser.id,...friendIds,...pendSenderIds])];
   const {data:profiles}=await sb.from('brushy_profiles').select('id,username,level,streak,best_streak,total_brushes,friend_code,equipped_color').in('id',allIds);
   friendsList=(profiles||[]).filter(p=>friendIds.includes(p.id));
   // escovadas hoje de todos
